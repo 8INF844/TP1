@@ -14,24 +14,44 @@ to setup
 end
 
 to go
-  ask turtles [ flock ]
+  ask turtle 1 [
+    flock
+    set color red
+  ]
   ;; the following line is used to make the turtles
   ;; animate more smoothly.
-  repeat 5 [ ask turtles [ fd 0.2 ] display ]
+  ;; repeat 5 [ ask turtles [ fd 0.2 ] display ]
   ;; for greater efficiency, at the expense of smooth
   ;; animation, substitute the following line instead:
   ;;   ask turtles [ fd 1 ]
-  tick
+  ;; tick
 end
 
 to flock  ;; turtle procedure
   find-flockmates
+  ;; TODO clean code, I just test few things with NETLogo syntax
   if any? flockmates
-    [ find-nearest-neighbor
-      ifelse distance nearest-neighbor < minimum-separation
-        [ separate ]
-        [ align
-          cohere ] ]
+    [
+      let separate-vector (list 0 0)
+      show position 0 separate-vector
+      ask flockmates
+      [
+        if distance turtle 0 > 0
+        [
+           let turtle-separate-vector (vector-between myself (turtle 0))
+           set separate-vector replace-item 0 separate-vector (item 0 separate-vector + item 0 turtle-separate-vector)
+           set separate-vector replace-item 1 separate-vector (item 1 separate-vector + item 1 turtle-separate-vector)
+        ]
+      ]
+      set separate-vector replace-item 0 separate-vector (-(item 0 separate-vector / count flockmates))
+      set separate-vector replace-item 1 separate-vector (-(item 1 separate-vector / count flockmates))
+      show separate-vector
+    ]
+;;    [ find-nearest-neighbor
+;;      ifelse distance nearest-neighbor < minimum-separation
+;;        [ separate ]
+;;        [ align
+;;          cohere ] ]
 end
 
 to find-flockmates  ;; turtle procedure
@@ -102,6 +122,15 @@ to turn-at-most [turn max-turn]  ;; turtle procedure
     [ rt turn ]
 end
 
+;; Compute a vector between 2 turtles
+to-report vector-between [turtle1 turtle2]
+  let coef 1 / (distance turtle2)
+  report (list
+    (([xcor] of turtle2 - [xcor] of turtle1) * coef)
+    (([ycor] of turtle2 - [ycor] of turtle1) * coef)
+  )
+end
+
 
 ; Copyright 1998 Uri Wilensky.
 ; See Info tab for full copyright and license.
@@ -157,7 +186,7 @@ BUTTON
 126
 NIL
 go
-T
+NIL
 1
 T
 OBSERVER
@@ -176,7 +205,7 @@ population
 population
 1.0
 1000.0
-300.0
+63.0
 1.0
 1
 NIL
@@ -236,7 +265,7 @@ vision
 vision
 0.0
 10.0
-3.0
+10.0
 0.5
 1
 patches
