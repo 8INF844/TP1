@@ -1,0 +1,52 @@
+\documentclass{article}
+\usepackage{natbib}
+\usepackage[francais]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{minted}
+\usepackage{uqac}
+\usepackage{sectioncompilation}
+
+% ================================ Meta data (pour titre et autre)
+\discipline{8INF844}
+\supervisor{Abdenour Bouzouane}
+\project{TP1}
+\title{Simulation multi-agents avec NetLogo}
+\author{Sébastien Blin\\Victor Drouin Viallard}
+
+% ================================ Document
+\begin{document}
+
+\maketitle
+
+\section{Synthèse de l'article}
+\subsection{Introduction}
+L'article \emph{Flocks, Herds, and Schools: A Distributed Behavioral Model} (\emph{Craig W. Reynolds}) décrit comment simuler des flocks en considérant chaque individu à part, sans avoir à scripter le mouvement de chaque individu, mais plutôt en fonction de l'environnement perçu par ceux-ci. Le flock sera ainsi le résultat du mouvement de chaque individu. À première vue, la simulation d'un flock peut paraître difficile, car il y a beaucoup d'individus à simuler et très dur à maintenir (éviter les collisions entre toutes les particules à chaque frame par exemple), mais ce papier propose une méthode pour réussir à simuler ce mouvement sans avoir à réaliser la gestion des collisions. Ainsi, Le flock sera le résultat du mouvement d'un seul individu appliqué à tous les oiseaux.
+
+On considère ici le flock comme un ensemble de particules améliorées (\emph{boid}). Chaque particule représente un individu (ici un oiseau) et possède des variables (couleur, localisation, velocité, etc) auxquelles on donne une forme (qui est plus significative visuellement et ajoute la notion d'orientation) ainsi qu'une vitesse maximale.
+
+\subsection{Fonctionnement de l'algorithme}
+Les observations montre que certains animaux se regroupent en flock afin de se protéger des prédateurs, chercher de la nourriture, etc. Pour participer à un flock, un oiseau doit pouvoir se coordoner avec les oiseaux qui l'entourent. Vu qu'un flock est possiblement infini en taille (certains bancs de poissons ont des millions d'individus), on suppose que l'animal ne considère que lui-même, quelques uns de ses voisins et l'ensemble du flock. On peut alors considérer trois forces~:
+
+\begin{itemize}
+  \item \emph{Collision Avoidance}, pour éviter de rentrer en collision avec les autres oiseaux.
+  \item \emph{Velocity Matching} (heading + speed => vecteur direction), pour rester à la vitesse des oiseaux voisins.
+  \item \emph{Flock Centering}, pour rester proche des oiseaux voisins et aller vers le centre du flock car y a la meme densité partout autour de lui.
+\end{itemize}
+
+On observe donc deux forces opposées~: l'une qui pousse l'oiseau à rester dans le flock, l'autre qui le pousse à éviter les autres oiseaux~; il faut y prêter attention car cela peut amener l'oiseau à ne pas savoir où se déplacer.
+Les trois forces agissent indépendament et propose une solution différente au choix de la direction à prendre. On peut alors décider d'atténuer plus ou moins telle ou telle force et les combiner pour obtenir le mouvement résultant des 3 forces, etc. Si moyenner ces trois forces est la solution la plus simple, Il semble plus intéressant de les prioritiser puis de les accumuler dans l'ordre jusqu'à atteindre une magnitude totale maximale, pour éviter les problèmes d'opposition évoqués précédemment. Par exemple, si on regarde en priorité la force de \emph{Collision Avoidance} et qu'elle est de magnitude plus forte que celle maximale alors on suivra directement cette force pour éviter en priorité la collision et les autres forces seront temporairement écartées.
+
+\subsection{Améliorations possibles}
+On peut enfin ajouter des fonctionnalités comme l'initialisation de la position des obstacles, des oiseaux ou encore leur donner un but de migration au fur et à mesure. La plus intéressante des fonctionnalité est l'évitement d'objets. Pour la réaliser, deux solutions sont envisageables. La première, \emph{force field concept}, consiste à avoir une force de répulsion autour de l'objet à éviter, mais si l'oiseau arrive pile en face d'une ligne du champ, il ne sera pas repoussé mais ralenti jusqu'à se bloquer. De plus, si l'oiseau vole à coté d'un mur il n'a pas besoin de tourner même s'il est dans le champ, ce qui nous amène à la seconde, \emph{steer-to-avoid}, où l'oiseau ne considère que les obstables face à lui. S'il en trouve un, il calcule alors un vecteur afin d'éviter l'objet.
+
+\subsection{Conclusion}
+On peut trouver plusieurs applications concrètes à la simulation d'un flocking, par exemple dans la simulation de traffics routiers ou encore pour l'observation d'animaux.
+Enfin, il est possible d'améliorer l'algorithme en le parrallélisant ou en étant sûr que $N$ soit assez petit (en considérant seulement une partie du flock par exemple).
+
+\section{Simulation avec NetLogo}
+
+
+\end{document}
