@@ -14,6 +14,7 @@ to setup
       setxy random-xcor random-ycor
       set flockmates no-turtles
       set align-vector (list (random-float 1) (random-float 1))
+      set move-vector (list (random-float 1) (random-float 1))
       set maxspeed (random-float 2.5)
     ]
   reset-ticks
@@ -22,77 +23,33 @@ end
 to go
   ask turtles [
     flock
-    move
     set color red
   ]
-  ;; the following line is used to make the turtles
-  ;; animate more smoothly.
-  ;; repeat 5 [ ask turtles [ fd 0.2 ] display ]
-  ;; for greater efficiency, at the expense of smooth
-  ;; animation, substitute the following line instead:
-  ;;   ask turtles [ fd 1 ]
-  ;; tick
+  tick
 end
 
 to flock  ;; turtle procedure
+  ;; S1 Chercher les voisins de l'agent considéré
   find-flockmates
-  ;; TODO clean code, I just test few things with NETLogo syntax
   if any? flockmates
-    [
-      let separate-vector (list 0 0)
-      let new-align-vector align-vector
-      ;;show align-vector
-      let gravityx xcor
-      let gravityy ycor
-      ask flockmates
-      [
-        ;; separate
-        if distance turtle 0 > 0
-        [
-           let turtle-separate-vector (vector-between myself (turtle 0))
-           set separate-vector replace-item 0 separate-vector (item 0 separate-vector + item 0 turtle-separate-vector)
-           set separate-vector replace-item 1 separate-vector (item 1 separate-vector + item 1 turtle-separate-vector)
-        ]
-        ;; align
-        set new-align-vector replace-item 0 new-align-vector (item 0 new-align-vector + item 0 align-vector)
-        set new-align-vector replace-item 1 new-align-vector (item 1 new-align-vector + item 1 align-vector)
-        ;;show align-vector
-        ;; coherce
-        set gravityx (gravityx + xcor)
-        set gravityy (gravityy + ycor)
-      ]
-      ;; mean
-      set align-vector replace-item 0 align-vector ((item 0 new-align-vector / (count flockmates + 1)))
-      set align-vector replace-item 1 align-vector ((item 1 new-align-vector / (count flockmates + 1)))
-      set separate-vector replace-item 0 separate-vector (-(item 0 separate-vector / count flockmates))
-      set separate-vector replace-item 1 separate-vector (-(item 1 separate-vector / count flockmates))
-      ;;show align-vector
-      ;; show separate-vector
-      ;; coherce
-      set gravityx (gravityx / (count flockmates + 1))
-      set gravityy (gravityy / (count flockmates + 1))
-      show maxspeed
-      show gravityx
-      show xcor
-      let gravity-vector (list
-        ((xcor - gravityx) * maxspeed)
-        ((ycor - gravityy) * maxspeed)
-      )
-      ;; todo 5 cohere
-
-      ;; move
-      ;; todo ponderate
-      set move-vector (list
-        ((item 0 gravity-vector + item 0 align-vector + item 0 separate-vector) / 3)
-        ((item 1 gravity-vector + item 1 align-vector + item 1 separate-vector) / 3)
-      )
-    ]
-end
-
-to move
-  ask turtles [
+  [
+    let separate-vector separate flockmates
+    align flockmates
+    let coherce-vector coherce flockmates
+    let total-factor separate-factor + align-factor + cohere-factor
+    set move-vector (list
+      (( cohere-factor * item 0 coherce-vector
+       + align-factor * item 0 align-vector
+       + separate-factor * item 0 separate-vector) / total-factor)
+      (( cohere-factor * item 1 coherce-vector
+       + align-factor * item 1 align-vector
+       + separate-factor * item 1 separate-vector) / total-factor)
+    )
+    show move-vector
     fd sqrt (item 0 move-vector * item 0 move-vector) + (item 1 move-vector * item 1 move-vector)
-    set heading atan item 1 move-vector item 0 move-vector
+    if item 1 move-vector != 0 and item 0 move-vector != 0 [
+      set heading atan item 1 move-vector item 0 move-vector
+    ]
   ]
 end
 
@@ -100,82 +57,61 @@ to find-flockmates  ;; turtle procedure
   set flockmates other turtles in-radius vision
 end
 
-to find-nearest-neighbor ;; turtle procedure
-  set nearest-neighbor min-one-of flockmates [distance myself]
+to-report separate [turtlesaround]
+  let separate-vector (list 0 0)
+  ;; S2 Pour chaque voisin
+  let basex xcor
+  let basey ycor
+  ask turtlesaround
+  [
+    if distance myself > 0
+    [
+      show distance myself
+      ;; S2.2 Multiplier ce vecteur directeur par l’inverse de la distance entre l’agent et son voisin
+      let coef 1 / (distance myself)
+      ;; S2.1 Calculer le vecteur directeur entre la position du voisin et la position de l’agent
+      let turtle-separate-vector (list
+        ((basex - xcor) * coef)
+        ((basey - ycor) * coef)
+      )
+      set separate-vector replace-item 0 separate-vector (item 0 separate-vector + item 0 turtle-separate-vector)
+      set separate-vector replace-item 1 separate-vector (item 1 separate-vector + item 1 turtle-separate-vector)
+    ]
+  ]
+  set separate-vector replace-item 0 separate-vector ((item 0 separate-vector / count turtlesaround))
+  set separate-vector replace-item 1 separate-vector ((item 1 separate-vector / count turtlesaround))
+  report separate-vector
 end
 
-;;; SEPARATE
-
-to separate  ;; turtle procedure
-  turn-away ([heading] of nearest-neighbor) max-separate-turn
+to align [turtlesaround]
+  let new-align-vector align-vector
+  ask turtlesaround [
+   set new-align-vector replace-item 0 new-align-vector (item 0 new-align-vector + item 0 align-vector)
+   set new-align-vector replace-item 1 new-align-vector (item 1 new-align-vector + item 1 align-vector)
+  ]
+  ;; Calculer le vecteur directeur moyen en faisant la moyenne des vecteurs directeurs des voisins
+  set align-vector replace-item 0 align-vector ((item 0 new-align-vector / (count turtlesaround + 1)))
+  set align-vector replace-item 1 align-vector ((item 1 new-align-vector / (count turtlesaround + 1)))
 end
 
-;;; ALIGN
-
-to align  ;; turtle procedure
-  turn-towards average-flockmate-heading max-align-turn
-end
-
-to-report average-flockmate-heading  ;; turtle procedure
-  ;; We can't just average the heading variables here.
-  ;; For example, the average of 1 and 359 should be 0,
-  ;; not 180.  So we have to use trigonometry.
-  let x-component sum [dx] of flockmates
-  let y-component sum [dy] of flockmates
-  ifelse x-component = 0 and y-component = 0
-    [ report heading ]
-    [ report atan x-component y-component ]
-end
-
-;;; COHERE
-
-to cohere  ;; turtle procedure
-  turn-towards average-heading-towards-flockmates max-cohere-turn
-end
-
-to-report average-heading-towards-flockmates  ;; turtle procedure
-  ;; "towards myself" gives us the heading from the other turtle
-  ;; to me, but we want the heading from me to the other turtle,
-  ;; so we add 180
-  let x-component mean [sin (towards myself + 180)] of flockmates
-  let y-component mean [cos (towards myself + 180)] of flockmates
-  ifelse x-component = 0 and y-component = 0
-    [ report heading ]
-    [ report atan x-component y-component ]
-end
-
-;;; HELPER PROCEDURES
-
-to turn-towards [new-heading max-turn]  ;; turtle procedure
-  turn-at-most (subtract-headings new-heading heading) max-turn
-end
-
-to turn-away [new-heading max-turn]  ;; turtle procedure
-  turn-at-most (subtract-headings heading new-heading) max-turn
-end
-
-;; turn right by "turn" degrees (or left if "turn" is negative),
-;; but never turn more than "max-turn" degrees
-to turn-at-most [turn max-turn]  ;; turtle procedure
-  ifelse abs turn > max-turn
-    [ ifelse turn > 0
-        [ rt max-turn ]
-        [ lt max-turn ] ]
-    [ rt turn ]
-end
-
-;; Compute a vector between 2 turtles
-to-report vector-between [turtle1 turtle2]
-  let coef 1 / (distance turtle2)
+to-report coherce [turtlesaround]
+  let gravityx xcor
+  let gravityy ycor
+  ;; Calculer le centre de gravité des voisins
+  ask turtlesaround [
+    set gravityx (gravityx + xcor)
+    set gravityy (gravityy + ycor)
+  ]
+  set gravityx (gravityx / (count turtlesaround + 1))
+  set gravityy (gravityy / (count turtlesaround + 1))
+  ;; Calculer le vecteur directeur entre la position de l’agent et ce centre de gravité
+  ;; Multiplier le vecteur directeur par la vitesse maximale
+  ;; La force de cohésion est la différence entre la vélocité maximale et la vélocité courante
   report (list
-    (([xcor] of turtle2 - [xcor] of turtle1) * coef)
-    (([ycor] of turtle2 - [ycor] of turtle1) * coef)
+    (item 0 move-vector - (xcor - gravityx) * maxspeed)
+    (item 1 move-vector - (ycor - gravityy) * maxspeed)
   )
 end
-
-
-; Copyright 1998 Uri Wilensky.
-; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
 250
@@ -258,11 +194,11 @@ SLIDER
 217
 237
 250
-max-align-turn
-max-align-turn
-0.0
-20.0
+align-factor
+align-factor
+0.25
 5.0
+0.25
 0.25
 1
 degrees
@@ -273,11 +209,11 @@ SLIDER
 251
 237
 284
-max-cohere-turn
-max-cohere-turn
-0.0
-20.0
-3.0
+cohere-factor
+cohere-factor
+0.25
+5.0
+0.25
 0.25
 1
 degrees
@@ -286,13 +222,13 @@ HORIZONTAL
 SLIDER
 4
 285
-237
+252
 318
-max-separate-turn
-max-separate-turn
-0.0
-20.0
-2.75
+separate-factor
+separate-factor
+0.25
+5.0
+0.25
 0.25
 1
 degrees
@@ -307,7 +243,7 @@ vision
 vision
 0.0
 10.0
-3.5
+10.0
 0.5
 1
 patches
