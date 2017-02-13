@@ -8,7 +8,7 @@ turtles-own [
 
 to setup
   clear-all
-  create-turtles population
+  create-turtles 4
     [ set color yellow - 2 + random 7  ;; random shades look nice
       set size 1.5  ;; easier to see
       setxy random-xcor random-ycor
@@ -17,13 +17,30 @@ to setup
       set move-vector (list (random-float 1) (random-float 1))
       set maxspeed (random-float 2.5)
     ]
+  ask turtle 0 [
+    setxy 0 1
+    set align-vector (list 0 0)
+    set move-vector (list 0 0)
+    set color red
+  ]
+  ask turtle 1 [ setxy 0 -1
+    set align-vector (list 0 0)
+    set move-vector (list 0 0)
+  ]
+  ask turtle 2 [ setxy 1 0
+    set align-vector (list 0 0)
+    set move-vector (list 0 0)
+  ]
+  ask turtle 3 [ setxy -1 0
+    set align-vector (list 0 0)
+    set move-vector (list 0 0)
+  ]
   reset-ticks
 end
 
 to go
   ask turtles [
     flock
-    set color red
   ]
   tick
 end
@@ -37,14 +54,15 @@ to flock  ;; turtle procedure
     align flockmates
     let coherce-vector coherce flockmates
     let total-factor separate-factor + align-factor + cohere-factor
-    set move-vector (list
-      (( cohere-factor * item 0 coherce-vector
-       + align-factor * item 0 align-vector
-       + separate-factor * item 0 separate-vector) / total-factor)
-      (( cohere-factor * item 1 coherce-vector
-       + align-factor * item 1 align-vector
-       + separate-factor * item 1 separate-vector) / total-factor)
-    )
+    ;set move-vector (list
+    ;  (( cohere-factor * item 0 coherce-vector
+    ;   + align-factor * item 0 align-vector
+    ;   + separate-factor * item 0 separate-vector) / total-factor)
+    ;  (( cohere-factor * item 1 coherce-vector
+    ;   + align-factor * item 1 align-vector
+    ;   + separate-factor * item 1 separate-vector) / total-factor)
+    ;)
+    set move-vector separate-vector
   ]
   fd sqrt (item 0 move-vector * item 0 move-vector) + (item 1 move-vector * item 1 move-vector)
   if item 1 move-vector != 0 and item 0 move-vector != 0 [
@@ -59,19 +77,23 @@ end
 to-report separate [turtlesaround]
   let separate-vector (list 0 0)
   ;; S2 Pour chaque voisin
-  let basex xcor
-  let basey ycor
+  let basex abs xcor
+  let basey abs ycor
   ask turtlesaround
   [
     if distance myself > 0
     [
       ;; S2.2 Multiplier ce vecteur directeur par l’inverse de la distance entre l’agent et son voisin
       let coef 1 / (distance myself)
+      let difx (basex - xcor)
+      show difx
+      let dify (basey - ycor)
       ;; S2.1 Calculer le vecteur directeur entre la position du voisin et la position de l’agent
       let turtle-separate-vector (list
-        ((basex - xcor) * coef)
-        ((basey - ycor) * coef)
+        (difx * coef)
+        (dify * coef)
       )
+      show turtle-separate-vector
       set separate-vector replace-item 0 separate-vector (item 0 separate-vector + item 0 turtle-separate-vector)
       set separate-vector replace-item 1 separate-vector (item 1 separate-vector + item 1 turtle-separate-vector)
     ]
@@ -173,15 +195,15 @@ NIL
 0
 
 SLIDER
-9
+11
 51
-232
+234
 84
 population
 population
 1.0
 1000.0
-131.0
+16.0
 1.0
 1
 NIL
@@ -226,7 +248,7 @@ separate-factor
 separate-factor
 0.25
 5.0
-0.25
+5.0
 0.25
 1
 degrees
@@ -241,7 +263,7 @@ vision
 vision
 0.0
 10.0
-10.0
+9.5
 0.5
 1
 patches
@@ -261,6 +283,23 @@ minimum-separation
 1
 patches
 HORIZONTAL
+
+BUTTON
+65
+16
+174
+49
+onetimego
+go
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
