@@ -1,6 +1,9 @@
 turtles-own [
   flockmates         ;; agentset of nearby turtles
   nearest-neighbor   ;; closest one of our flockmates
+  align-vector       ;;
+  maxspeed           ;;
+  move-vector        ;;
 ]
 
 to setup
@@ -9,13 +12,17 @@ to setup
     [ set color yellow - 2 + random 7  ;; random shades look nice
       set size 1.5  ;; easier to see
       setxy random-xcor random-ycor
-      set flockmates no-turtles ]
+      set flockmates no-turtles
+      set align-vector (list (random-float 1) (random-float 1))
+      set maxspeed (random-float 2.5)
+    ]
   reset-ticks
 end
 
 to go
-  ask turtle 1 [
+  ask turtles [
     flock
+    move
     set color red
   ]
   ;; the following line is used to make the turtles
@@ -33,25 +40,60 @@ to flock  ;; turtle procedure
   if any? flockmates
     [
       let separate-vector (list 0 0)
-      show position 0 separate-vector
+      let new-align-vector align-vector
+      ;;show align-vector
+      let gravityx xcor
+      let gravityy ycor
       ask flockmates
       [
+        ;; separate
         if distance turtle 0 > 0
         [
            let turtle-separate-vector (vector-between myself (turtle 0))
            set separate-vector replace-item 0 separate-vector (item 0 separate-vector + item 0 turtle-separate-vector)
            set separate-vector replace-item 1 separate-vector (item 1 separate-vector + item 1 turtle-separate-vector)
         ]
+        ;; align
+        set new-align-vector replace-item 0 new-align-vector (item 0 new-align-vector + item 0 align-vector)
+        set new-align-vector replace-item 1 new-align-vector (item 1 new-align-vector + item 1 align-vector)
+        ;;show align-vector
+        ;; coherce
+        set gravityx (gravityx + xcor)
+        set gravityy (gravityy + ycor)
       ]
+      ;; mean
+      set align-vector replace-item 0 align-vector ((item 0 new-align-vector / (count flockmates + 1)))
+      set align-vector replace-item 1 align-vector ((item 1 new-align-vector / (count flockmates + 1)))
       set separate-vector replace-item 0 separate-vector (-(item 0 separate-vector / count flockmates))
       set separate-vector replace-item 1 separate-vector (-(item 1 separate-vector / count flockmates))
-      show separate-vector
+      ;;show align-vector
+      ;; show separate-vector
+      ;; coherce
+      set gravityx (gravityx / (count flockmates + 1))
+      set gravityy (gravityy / (count flockmates + 1))
+      show maxspeed
+      show gravityx
+      show xcor
+      let gravity-vector (list
+        ((xcor - gravityx) * maxspeed)
+        ((ycor - gravityy) * maxspeed)
+      )
+      ;; todo 5 cohere
+
+      ;; move
+      ;; todo ponderate
+      set move-vector (list
+        ((item 0 gravity-vector + item 0 align-vector + item 0 separate-vector) / 3)
+        ((item 1 gravity-vector + item 1 align-vector + item 1 separate-vector) / 3)
+      )
     ]
-;;    [ find-nearest-neighbor
-;;      ifelse distance nearest-neighbor < minimum-separation
-;;        [ separate ]
-;;        [ align
-;;          cohere ] ]
+end
+
+to move
+  ask turtles [
+    fd sqrt (item 0 move-vector * item 0 move-vector) + (item 1 move-vector * item 1 move-vector)
+    set heading atan item 1 move-vector item 0 move-vector
+  ]
 end
 
 to find-flockmates  ;; turtle procedure
@@ -250,7 +292,7 @@ max-separate-turn
 max-separate-turn
 0.0
 20.0
-1.5
+2.75
 0.25
 1
 degrees
@@ -265,7 +307,7 @@ vision
 vision
 0.0
 10.0
-10.0
+3.5
 0.5
 1
 patches
