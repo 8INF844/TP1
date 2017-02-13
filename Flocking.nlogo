@@ -45,11 +45,10 @@ to flock  ;; turtle procedure
        + align-factor * item 1 align-vector
        + separate-factor * item 1 separate-vector) / total-factor)
     )
-    show move-vector
-    fd sqrt (item 0 move-vector * item 0 move-vector) + (item 1 move-vector * item 1 move-vector)
-    if item 1 move-vector != 0 and item 0 move-vector != 0 [
-      set heading atan item 1 move-vector item 0 move-vector
-    ]
+  ]
+  fd sqrt (item 0 move-vector * item 0 move-vector) + (item 1 move-vector * item 1 move-vector)
+  if item 1 move-vector != 0 and item 0 move-vector != 0 [
+    set heading atan item 1 move-vector item 0 move-vector
   ]
 end
 
@@ -66,7 +65,6 @@ to-report separate [turtlesaround]
   [
     if distance myself > 0
     [
-      show distance myself
       ;; S2.2 Multiplier ce vecteur directeur par l’inverse de la distance entre l’agent et son voisin
       let coef 1 / (distance myself)
       ;; S2.1 Calculer le vecteur directeur entre la position du voisin et la position de l’agent
@@ -164,7 +162,7 @@ BUTTON
 126
 NIL
 go
-NIL
+T
 1
 T
 OBSERVER
@@ -183,7 +181,7 @@ population
 population
 1.0
 1000.0
-63.0
+131.0
 1.0
 1
 NIL
