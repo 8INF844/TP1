@@ -8,7 +8,7 @@ turtles-own [
 
 to setup
   clear-all
-  create-turtles 4
+  create-turtles population
     [ set color yellow - 2 + random 7  ;; random shades look nice
       set size 1.5  ;; easier to see
       setxy random-xcor random-ycor
@@ -18,22 +18,16 @@ to setup
       set maxspeed (random-float 2.5)
     ]
   ask turtle 0 [
+    setxy 1 0
+  ]
+  ask turtle 1 [
+    setxy -1 0
+  ]
+  ask turtle 2 [
+    setxy 0 -1
+  ]
+  ask turtle 3 [
     setxy 0 1
-    set align-vector (list 0 0)
-    set move-vector (list 0 0)
-    set color red
-  ]
-  ask turtle 1 [ setxy 0 -1
-    set align-vector (list 0 0)
-    set move-vector (list 0 0)
-  ]
-  ask turtle 2 [ setxy 1 0
-    set align-vector (list 0 0)
-    set move-vector (list 0 0)
-  ]
-  ask turtle 3 [ setxy -1 0
-    set align-vector (list 0 0)
-    set move-vector (list 0 0)
   ]
   reset-ticks
 end
@@ -52,17 +46,17 @@ to flock  ;; turtle procedure
   [
     let separate-vector separate flockmates
     align flockmates
-    let coherce-vector coherce flockmates
+    let cohere-vector cohere flockmates
     let total-factor separate-factor + align-factor + cohere-factor
-    ;set move-vector (list
-    ;  (( cohere-factor * item 0 coherce-vector
-    ;   + align-factor * item 0 align-vector
-    ;   + separate-factor * item 0 separate-vector) / total-factor)
-    ;  (( cohere-factor * item 1 coherce-vector
-    ;   + align-factor * item 1 align-vector
-    ;   + separate-factor * item 1 separate-vector) / total-factor)
-    ;)
-    set move-vector separate-vector
+    set move-vector (list
+      (( cohere-factor * item 0 cohere-vector
+       + align-factor * item 0 align-vector
+       + separate-factor * item 0 separate-vector) / total-factor)
+      (( cohere-factor * item 1 cohere-vector
+       + align-factor * item 1 align-vector
+       + separate-factor * item 1 separate-vector) / total-factor)
+    )
+    set move-vector cohere-vector
   ]
   fd sqrt (item 0 move-vector * item 0 move-vector) + (item 1 move-vector * item 1 move-vector)
   if item 1 move-vector != 0 and item 0 move-vector != 0 [
@@ -77,23 +71,27 @@ end
 to-report separate [turtlesaround]
   let separate-vector (list 0 0)
   ;; S2 Pour chaque voisin
-  let basex abs xcor
-  let basey abs ycor
+  let basex xcor
+  let basey ycor
   ask turtlesaround
   [
     if distance myself > 0
     [
       ;; S2.2 Multiplier ce vecteur directeur par l’inverse de la distance entre l’agent et son voisin
       let coef 1 / (distance myself)
-      let difx (basex - xcor)
-      show difx
-      let dify (basey - ycor)
+      let difx distancexy basex ycor
+      if basex > xcor or (basex < xcor and xcor - basex > vision)[
+        set difx (0 - difx)
+      ]
+      let dify distancexy xcor basey
+      if basey > ycor or (basey < ycor and ycor - basey > vision)[
+        set dify (0 - dify)
+      ]
       ;; S2.1 Calculer le vecteur directeur entre la position du voisin et la position de l’agent
       let turtle-separate-vector (list
         (difx * coef)
         (dify * coef)
       )
-      show turtle-separate-vector
       set separate-vector replace-item 0 separate-vector (item 0 separate-vector + item 0 turtle-separate-vector)
       set separate-vector replace-item 1 separate-vector (item 1 separate-vector + item 1 turtle-separate-vector)
     ]
@@ -114,7 +112,7 @@ to align [turtlesaround]
   set align-vector replace-item 1 align-vector ((item 1 new-align-vector / (count turtlesaround + 1)))
 end
 
-to-report coherce [turtlesaround]
+to-report cohere [turtlesaround]
   let gravityx xcor
   let gravityy ycor
   ;; Calculer le centre de gravité des voisins
@@ -127,10 +125,23 @@ to-report coherce [turtlesaround]
   ;; Calculer le vecteur directeur entre la position de l’agent et ce centre de gravité
   ;; Multiplier le vecteur directeur par la vitesse maximale
   ;; La force de cohésion est la différence entre la vélocité maximale et la vélocité courante
+  let difx distancexy gravityx ycor
+  if gravityx > xcor or (gravityx < xcor and xcor - gravityx > vision)[
+    set difx (0 - difx)
+  ]
+  let dify distancexy xcor gravityy
+  if gravityy > ycor or (gravityy < ycor and ycor - gravityy > vision)[
+    set dify (0 - dify)
+  ]
+  ;; TODO fix that
   report (list
-    (item 0 move-vector - (xcor - gravityx) * maxspeed)
-    (item 1 move-vector - (ycor - gravityy) * maxspeed)
+    (0 - difx)
+    (0 - dify)
   )
+end
+
+to generate-objects
+  ask n-of 100 patches [ set pcolor gray ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -203,7 +214,7 @@ population
 population
 1.0
 1000.0
-16.0
+203.0
 1.0
 1
 NIL
@@ -248,7 +259,7 @@ separate-factor
 separate-factor
 0.25
 5.0
-5.0
+0.25
 0.25
 1
 degrees
@@ -263,7 +274,7 @@ vision
 vision
 0.0
 10.0
-9.5
+10.0
 0.5
 1
 patches
