@@ -17,18 +17,6 @@ to setup
       set move-vector (list (random-float 1) (random-float 1))
       set maxspeed (random-float 2.5)
     ]
-  ask turtle 0 [
-    setxy 1 0
-  ]
-  ask turtle 1 [
-    setxy -1 0
-  ]
-  ask turtle 2 [
-    setxy 0 -1
-  ]
-  ask turtle 3 [
-    setxy 0 1
-  ]
   reset-ticks
 end
 
@@ -56,9 +44,13 @@ to flock  ;; turtle procedure
        + align-factor * item 1 align-vector
        + separate-factor * item 1 separate-vector) / total-factor)
     )
-    set move-vector cohere-vector
   ]
-  fd sqrt (item 0 move-vector * item 0 move-vector) + (item 1 move-vector * item 1 move-vector)
+  let speed sqrt ((item 0 move-vector * item 0 move-vector) + (item 1 move-vector * item 1 move-vector))
+  if speed > maxspeed
+  [
+    set speed maxspeed
+  ]
+  fd speed
   if item 1 move-vector != 0 and item 0 move-vector != 0 [
     set heading atan item 1 move-vector item 0 move-vector
   ]
@@ -141,7 +133,8 @@ to-report cohere [turtlesaround]
 end
 
 to generate-objects
-  ask n-of 100 patches [ set pcolor gray ]
+  ask patches [ set pcolor black ]
+  ask n-of nb-objects patches [ set pcolor blue ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -214,7 +207,7 @@ population
 population
 1.0
 1000.0
-203.0
+11.0
 1.0
 1
 NIL
@@ -259,7 +252,7 @@ separate-factor
 separate-factor
 0.25
 5.0
-0.25
+5.0
 0.25
 1
 degrees
@@ -302,6 +295,38 @@ BUTTON
 49
 onetimego
 go
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+773
+25
+945
+58
+nb-objects
+nb-objects
+0
+100
+8.0
+1
+1
+NIL
+HORIZONTAL
+
+BUTTON
+948
+25
+1104
+58
+NIL
+generate-objects
 NIL
 1
 T
