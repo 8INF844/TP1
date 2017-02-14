@@ -9,13 +9,13 @@ turtles-own [
 to setup
   clear-all
   create-turtles population
-    [ set color yellow - 2 + random 7  ;; random shades look nice
+    [ set color white
       set size 1.5  ;; easier to see
       setxy random-xcor random-ycor
       set flockmates no-turtles
       set align-vector (list (random-float 1) (random-float 1))
       set move-vector (list (random-float 1) (random-float 1))
-      set maxspeed (random-float 2.5)
+      set maxspeed (1)
     ]
   reset-ticks
 end
@@ -23,6 +23,8 @@ end
 to go
   ask turtles [
     flock
+    get-object
+    drop-object
   ]
   tick
 end
@@ -51,9 +53,7 @@ to flock  ;; turtle procedure
     set speed maxspeed
   ]
   fd speed
-  if item 1 move-vector != 0 and item 0 move-vector != 0 [
-    set heading atan item 1 move-vector item 0 move-vector
-  ]
+  facexy (xcor + item 0 move-vector) (ycor + item 1 move-vector)
 end
 
 to find-flockmates  ;; turtle procedure
@@ -72,11 +72,11 @@ to-report separate [turtlesaround]
       ;; S2.2 Multiplier ce vecteur directeur par l’inverse de la distance entre l’agent et son voisin
       let coef 1 / (distance myself)
       let difx distancexy basex ycor
-      if basex > xcor or (basex < xcor and xcor - basex > vision)[
+      if basex > xcor or (basex < xcor and xcor - basex >= vision)[
         set difx (0 - difx)
       ]
       let dify distancexy xcor basey
-      if basey > ycor or (basey < ycor and ycor - basey > vision)[
+      if basey > ycor or (basey < ycor and ycor - basey >= vision)[
         set dify (0 - dify)
       ]
       ;; S2.1 Calculer le vecteur directeur entre la position du voisin et la position de l’agent
@@ -84,12 +84,18 @@ to-report separate [turtlesaround]
         (difx * coef)
         (dify * coef)
       )
-      set separate-vector replace-item 0 separate-vector (item 0 separate-vector + item 0 turtle-separate-vector)
-      set separate-vector replace-item 1 separate-vector (item 1 separate-vector + item 1 turtle-separate-vector)
+      set separate-vector (list
+        (item 0 separate-vector - item 0 turtle-separate-vector)
+        (item 1 separate-vector - item 1 turtle-separate-vector)
+      )
     ]
   ]
-  set separate-vector replace-item 0 separate-vector ((item 0 separate-vector / count turtlesaround))
-  set separate-vector replace-item 1 separate-vector ((item 1 separate-vector / count turtlesaround))
+  if any? turtlesaround [
+    set separate-vector (list
+      (item 0 separate-vector / count turtlesaround)
+      (item 1 separate-vector / count turtlesaround)
+     )
+  ]
   report separate-vector
 end
 
@@ -134,7 +140,21 @@ end
 
 to generate-objects
   ask patches [ set pcolor black ]
-  ask n-of nb-objects patches [ set pcolor blue ]
+  ask n-of nb-objects patches [ set pcolor red ]
+end
+
+to get-object
+  if pcolor = red [
+    set pcolor black
+    set color red
+  ]
+end
+
+to drop-object
+  if pcolor = black and color = red and any? patches with [pcolor = red] in-radius 1 [
+     set pcolor red
+     set color white
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -207,7 +227,7 @@ population
 population
 1.0
 1000.0
-11.0
+640.0
 1.0
 1
 NIL
@@ -220,9 +240,9 @@ SLIDER
 250
 align-factor
 align-factor
-0.25
+0
 5.0
-0.25
+1.0
 0.25
 1
 degrees
@@ -235,9 +255,9 @@ SLIDER
 284
 cohere-factor
 cohere-factor
-0.25
+0
 5.0
-0.25
+1.0
 0.25
 1
 degrees
@@ -250,9 +270,9 @@ SLIDER
 318
 separate-factor
 separate-factor
-0.25
-5.0
-5.0
+0
+100.0
+0.0
 0.25
 1
 degrees
@@ -267,7 +287,7 @@ vision
 vision
 0.0
 10.0
-10.0
+3.0
 0.5
 1
 patches
@@ -282,7 +302,7 @@ minimum-separation
 minimum-separation
 0.0
 5.0
-1.0
+4.0
 0.25
 1
 patches
@@ -314,7 +334,7 @@ nb-objects
 nb-objects
 0
 100
-8.0
+100.0
 1
 1
 NIL
