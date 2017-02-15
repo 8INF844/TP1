@@ -1,4 +1,5 @@
 turtles-own [
+  id
   flockmates         ;; agentset of nearby turtles
   nearest-neighbor   ;; closest one of our flockmates
   align-vector       ;;
@@ -8,19 +9,26 @@ turtles-own [
 
 to setup
   clear-all
+  let counter 0
   create-turtles population
-    [ set color white
+    [
+      set id counter
+      set counter counter + 1
+      set color white
       set size 1.5  ;; easier to see
       setxy random-xcor random-ycor
       set flockmates no-turtles
-      set align-vector (list (random-float 1) (random-float 1))
-      set move-vector (list (random-float 1) (random-float 1))
+      set align-vector (list (random-float 2 - 1) (random-float 2 - 1))
+      set move-vector (list (random-float 2 - 1) (random-float 2 - 1))
       set maxspeed (1)
     ]
   reset-ticks
 end
 
 to go
+  ask turtles [
+    set color white
+  ]
   ask turtles [
     flock
     get-object
@@ -31,111 +39,99 @@ end
 
 to flock  ;; turtle procedure
   ;; S1 Chercher les voisins de l'agent considéré
+  let force list 0 0
   find-flockmates
+  if id = 0 [
+    pen-down
+     set color red
+     ask flockmates [
+       set color green
+     ]
+  ]
   if any? flockmates
   [
     let separate-vector separate flockmates
-    align flockmates
+    set align-vector align flockmates
     let cohere-vector cohere flockmates
-    let total-factor separate-factor + align-factor + cohere-factor
-    set move-vector (list
-      (( cohere-factor * item 0 cohere-vector
-       + align-factor * item 0 align-vector
-       + separate-factor * item 0 separate-vector) / total-factor)
-      (( cohere-factor * item 1 cohere-vector
-       + align-factor * item 1 align-vector
-       + separate-factor * item 1 separate-vector) / total-factor)
-    )
+    set force (map + (map [[a] -> a * cohere-factor] cohere-vector) (map [[a] -> a * align-factor] align-vector) (map [[a] -> a * separate-factor] separate-vector))
   ]
-  let speed sqrt ((item 0 move-vector * item 0 move-vector) + (item 1 move-vector * item 1 move-vector))
+  set move-vector (map + move-vector force)
+  let speed sqrt sum (map * move-vector move-vector)
   if speed > maxspeed
   [
+    let c maxspeed / speed
     set speed maxspeed
+    set move-vector map [[a] -> a * c] move-vector
   ]
-  fd speed
   facexy (xcor + item 0 move-vector) (ycor + item 1 move-vector)
+  fd speed
 end
 
 to find-flockmates  ;; turtle procedure
   set flockmates other turtles in-radius vision
 end
 
+;; Calcul du vecteur de séparation d'une tortue par rapport à ses voisins
 to-report separate [turtlesaround]
-  let separate-vector (list 0 0)
-  ;; S2 Pour chaque voisin
-  let basex xcor
-  let basey ycor
+  let res list 0 0
+  ;; 2 Pour chaque voisin
   ask turtlesaround
   [
-    if distance myself > 0
+    if distance myself < minimum-separation
     [
-      ;; S2.2 Multiplier ce vecteur directeur par l’inverse de la distance entre l’agent et son voisin
-      let coef 1 / (distance myself)
-      let difx distancexy basex ycor
-      if basex > xcor or (basex < xcor and xcor - basex >= vision)[
-        set difx (0 - difx)
-      ]
-      let dify distancexy xcor basey
-      if basey > ycor or (basey < ycor and ycor - basey >= vision)[
-        set dify (0 - dify)
-      ]
-      ;; S2.1 Calculer le vecteur directeur entre la position du voisin et la position de l’agent
-      let turtle-separate-vector (list
-        (difx * coef)
-        (dify * coef)
-      )
-      set separate-vector (list
-        (item 0 separate-vector - item 0 turtle-separate-vector)
-        (item 1 separate-vector - item 1 turtle-separate-vector)
-      )
+      ;; 2.1 Calculer le vecteur directeur entre le voisin et l'agent
+      let dist distance myself
+      let alpha (towards myself)
+      ; let vect list (dist * cos alpha) (dist * sin alpha)
+
+      ;; 2.2 Le multiplier par l'inverse de la distance au voisin
+      let c minimum-separation / dist
+      let vect list ((sin alpha) * c) ((cos alpha) * c)
+      set res (map + res vect)
     ]
   ]
   if any? turtlesaround [
-    set separate-vector (list
-      (item 0 separate-vector / count turtlesaround)
-      (item 1 separate-vector / count turtlesaround)
-     )
+    let c count turtlesaround
+    set res map [[a] -> a / c] res
   ]
-  report separate-vector
+  report res
 end
 
-to align [turtlesaround]
-  let new-align-vector align-vector
-  ask turtlesaround [
-   set new-align-vector replace-item 0 new-align-vector (item 0 new-align-vector + item 0 align-vector)
-   set new-align-vector replace-item 1 new-align-vector (item 1 new-align-vector + item 1 align-vector)
+;; Calcul du vecteur d'alignement d'une tortue par rapport à ses voisins
+to-report align [turtlesaround]
+  let res list 0 0
+
+  ask turtlesaround
+  [
+    set res (map + res align-vector)
   ]
-  ;; Calculer le vecteur directeur moyen en faisant la moyenne des vecteurs directeurs des voisins
-  set align-vector replace-item 0 align-vector ((item 0 new-align-vector / (count turtlesaround + 1)))
-  set align-vector replace-item 1 align-vector ((item 1 new-align-vector / (count turtlesaround + 1)))
+  let c 1 + count turtlesaround
+  report map [[a] -> a / c] res
 end
 
 to-report cohere [turtlesaround]
-  let gravityx xcor
-  let gravityy ycor
-  ;; Calculer le centre de gravité des voisins
+  let center (list 0 0)
+  ;; Calculer barycentre de l'agent et de ses voisins
   ask turtlesaround [
-    set gravityx (gravityx + xcor)
-    set gravityy (gravityy + ycor)
+    set center (map + center (list xcor ycor))
   ]
-  set gravityx (gravityx / (count turtlesaround + 1))
-  set gravityy (gravityy / (count turtlesaround + 1))
+  if any? turtlesaround
+  [
+    let c count turtlesaround
+    set center (map [[a] -> a / c] center)
+  ]
+  if not any? turtlesaround
+  [
+    report move-vector
+  ]
   ;; Calculer le vecteur directeur entre la position de l’agent et ce centre de gravité
+  let alpha towardsxy (item 0 center) (item 1 center)
+
   ;; Multiplier le vecteur directeur par la vitesse maximale
+  let vect list (maxspeed * (sin alpha)) (maxspeed * (cos alpha))
+
   ;; La force de cohésion est la différence entre la vélocité maximale et la vélocité courante
-  let difx distancexy gravityx ycor
-  if gravityx > xcor or (gravityx < xcor and xcor - gravityx > vision)[
-    set difx (0 - difx)
-  ]
-  let dify distancexy xcor gravityy
-  if gravityy > ycor or (gravityy < ycor and ycor - gravityy > vision)[
-    set dify (0 - dify)
-  ]
-  ;; TODO fix that
-  report (list
-    (0 - difx)
-    (0 - dify)
-  )
+  report vect
 end
 
 to generate-objects
@@ -226,8 +222,8 @@ SLIDER
 population
 population
 1.0
-1000.0
-640.0
+2000
+424.0
 1.0
 1
 NIL
@@ -242,7 +238,7 @@ align-factor
 align-factor
 0
 5.0
-1.0
+2.0
 0.25
 1
 degrees
@@ -256,9 +252,9 @@ SLIDER
 cohere-factor
 cohere-factor
 0
-5.0
-1.0
-0.25
+2
+0.1
+0.1
 1
 degrees
 HORIZONTAL
@@ -271,8 +267,8 @@ SLIDER
 separate-factor
 separate-factor
 0
-100.0
-0.0
+500
+500.0
 0.25
 1
 degrees
@@ -286,8 +282,8 @@ SLIDER
 vision
 vision
 0.0
+50
 10.0
-3.0
 0.5
 1
 patches
@@ -301,8 +297,8 @@ SLIDER
 minimum-separation
 minimum-separation
 0.0
+10
 5.0
-4.0
 0.25
 1
 patches
