@@ -4,6 +4,7 @@ turtles-own [
   nearest-neighbor   ;; closest one of our flockmates
   align-vector       ;;
   move-vector        ;;
+  energy             ;;
 ]
 
 to setup
@@ -19,15 +20,24 @@ to setup
       set flockmates no-turtles
       set align-vector (list (random-float 2 - 1) (random-float 2 - 1))
       set move-vector (list (random-float 2 - 1) (random-float 2 - 1))
+      set energy 0
     ]
   reset-ticks
 end
 
 to go
   ask turtles [
-    flock
-    get-object
-    drop-object
+    ifelse energy > 0 [
+      flock
+      get-object
+      drop-object
+      set energy (energy - 1)
+    ]
+    [
+      if random pause = 1 [
+        set energy (random maxenergy)
+      ]
+    ]
   ]
   tick
 end
@@ -36,13 +46,6 @@ to flock  ;; turtle procedure
   ;; S1 Chercher les voisins de l'agent considéré
   let force list 0 0
   find-flockmates
-  ;if id = 0 [
-  ;  pen-down
-  ;    red
-  ;   ask flockmates [
-  ;      green
-  ;   ]
-  ;]
   if any? flockmates
   [
     let separate-vector separate flockmates
@@ -228,7 +231,7 @@ population
 population
 1.0
 2000
-193.0
+395.0
 1.0
 1
 NIL
@@ -243,7 +246,7 @@ align-factor
 align-factor
 0
 10.0
-1.25
+7.25
 0.25
 1
 degrees
@@ -258,7 +261,7 @@ cohere-factor
 cohere-factor
 0
 2
-0.1
+0.5
 0.1
 1
 degrees
@@ -273,7 +276,7 @@ separate-factor
 separate-factor
 0
 10
-6.5
+4.25
 0.25
 1
 degrees
@@ -288,7 +291,7 @@ vision
 vision
 0.0
 50
-10.0
+8.0
 0.5
 1
 patches
@@ -303,7 +306,7 @@ minimum-separation
 minimum-separation
 0.0
 10
-0.0
+4.0
 0.25
 1
 patches
@@ -335,7 +338,7 @@ nb-objects
 nb-objects
 0
 1000
-248.0
+580.0
 1
 1
 NIL
@@ -369,6 +372,54 @@ maxspeed
 5
 0.4
 0.1
+1
+NIL
+HORIZONTAL
+
+PLOT
+851
+182
+1051
+332
+plot 1
+NIL
+NIL
+0.0
+100.0
+0.0
+50.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "ask turtle 0 \n[ \n  plot count turtles in-radius vision\n]"
+
+SLIDER
+27
+395
+199
+428
+maxenergy
+maxenergy
+0
+10000
+800.0
+100
+1
+NIL
+HORIZONTAL
+
+SLIDER
+28
+463
+200
+496
+pause
+pause
+0
+100
+55.0
+1
 1
 NIL
 HORIZONTAL
