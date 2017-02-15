@@ -41,19 +41,20 @@ to flock  ;; turtle procedure
   ;; S1 Chercher les voisins de l'agent considéré
   let force list 0 0
   find-flockmates
-  if id = 0 [
-    pen-down
-     set color red
-     ask flockmates [
-       set color green
-     ]
-  ]
+  ;if id = 0 [
+  ;  pen-down
+  ;   set color red
+  ;   ask flockmates [
+  ;     set color green
+  ;   ]
+  ;]
   if any? flockmates
   [
     let separate-vector separate flockmates
     set align-vector align flockmates
     let cohere-vector cohere flockmates
     set force (map + (map [[a] -> a * cohere-factor] cohere-vector) (map [[a] -> a * align-factor] align-vector) (map [[a] -> a * separate-factor] separate-vector))
+    set force align-vector
   ]
   set move-vector (map + move-vector force)
   let speed sqrt sum (map * move-vector move-vector)
@@ -99,14 +100,14 @@ end
 
 ;; Calcul du vecteur d'alignement d'une tortue par rapport à ses voisins
 to-report align [turtlesaround]
-  let res list 0 0
-
-  ask turtlesaround
-  [
-    set res (map + res align-vector)
+    let new-align-vector align-vector
+  ask turtlesaround [
+   set new-align-vector replace-item 0 new-align-vector (item 0 new-align-vector + item 0 align-vector)
+   set new-align-vector replace-item 1 new-align-vector (item 1 new-align-vector + item 1 align-vector)
   ]
-  let c 1 + count turtlesaround
-  report map [[a] -> a / c] res
+  ;; Calculer le vecteur directeur moyen en faisant la moyenne des vecteurs directeurs des voisins
+  set align-vector replace-item 0 align-vector ((item 0 new-align-vector / (count turtlesaround + 1)))
+set align-vector replace-item 1 align-vector ((item 1 new-align-vector / (count turtlesaround + 1)))
 end
 
 to-report cohere [turtlesaround]
@@ -223,7 +224,7 @@ population
 population
 1.0
 2000
-424.0
+20.0
 1.0
 1
 NIL
@@ -238,7 +239,7 @@ align-factor
 align-factor
 0
 5.0
-2.0
+5.0
 0.25
 1
 degrees
@@ -253,7 +254,7 @@ cohere-factor
 cohere-factor
 0
 2
-0.1
+0.0
 0.1
 1
 degrees
@@ -267,8 +268,8 @@ SLIDER
 separate-factor
 separate-factor
 0
-500
-500.0
+10
+4.0
 0.25
 1
 degrees
@@ -283,7 +284,7 @@ vision
 vision
 0.0
 50
-10.0
+7.0
 0.5
 1
 patches
@@ -298,7 +299,7 @@ minimum-separation
 minimum-separation
 0.0
 10
-5.0
+2.0
 0.25
 1
 patches
