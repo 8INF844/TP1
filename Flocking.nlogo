@@ -3,7 +3,6 @@ turtles-own [
   flockmates         ;; agentset of nearby turtles
   nearest-neighbor   ;; closest one of our flockmates
   align-vector       ;;
-  maxspeed           ;;
   move-vector        ;;
 ]
 
@@ -20,15 +19,11 @@ to setup
       set flockmates no-turtles
       set align-vector (list (random-float 2 - 1) (random-float 2 - 1))
       set move-vector (list (random-float 2 - 1) (random-float 2 - 1))
-      set maxspeed (1)
     ]
   reset-ticks
 end
 
 to go
-  ask turtles [
-    set color white
-  ]
   ask turtles [
     flock
     get-object
@@ -43,9 +38,9 @@ to flock  ;; turtle procedure
   find-flockmates
   ;if id = 0 [
   ;  pen-down
-  ;   set color red
+  ;    red
   ;   ask flockmates [
-  ;     set color green
+  ;      green
   ;   ]
   ;]
   if any? flockmates
@@ -101,18 +96,21 @@ end
 
 ;; Calcul du vecteur d'alignement d'une tortue par rapport à ses voisins
 to-report align [turtlesaround]
-  let res list 0 0
-
+  let res align-vector
+  let turtlecolor color
+  set turtlesaround (other turtles in-radius vision with [color = turtlecolor])
   ask turtlesaround
   [
     set res (map + res align-vector)
   ]
-  let c count turtlesaround
+  let c count turtlesaround + 1
   report map [[a] -> a / c] res
 end
 
 to-report cohere [turtlesaround]
   let center (list 0 0)
+  let turtlecolor color
+  set turtlesaround (other turtles in-radius vision with [color = turtlecolor])
   ;; Calculer barycentre de l'agent et de ses voisins
   ask turtlesaround [
     set center (map + center (list xcor ycor))
@@ -136,21 +134,26 @@ to-report cohere [turtlesaround]
   report vect
 end
 
-to generate-objects
+to reset
   ask patches [ set pcolor black ]
-  ask n-of nb-objects patches [ set pcolor red ]
+end
+
+to generate-objects
+  let colors-objects (list red blue green yellow)
+  ask n-of nb-objects patches [ set pcolor one-of colors-objects ]
 end
 
 to get-object
-  if pcolor = red [
+  if pcolor != black and color = white [
+    set color pcolor
     set pcolor black
-    set color red
   ]
 end
 
 to drop-object
-  if pcolor = black and color = red and any? patches with [pcolor = red] in-radius 1 [
-     set pcolor red
+  let turtlecolor color
+  if pcolor = black and color != white and any? patches with [pcolor = turtlecolor] in-radius 1 [
+     set pcolor color
      set color white
   ]
 end
@@ -225,7 +228,7 @@ population
 population
 1.0
 2000
-462.0
+193.0
 1.0
 1
 NIL
@@ -239,8 +242,8 @@ SLIDER
 align-factor
 align-factor
 0
-5.0
-2.25
+10.0
+1.25
 0.25
 1
 degrees
@@ -255,7 +258,7 @@ cohere-factor
 cohere-factor
 0
 2
-0.2
+0.1
 0.1
 1
 degrees
@@ -270,7 +273,7 @@ separate-factor
 separate-factor
 0
 10
-1.25
+6.5
 0.25
 1
 degrees
@@ -285,7 +288,7 @@ vision
 vision
 0.0
 50
-7.5
+10.0
 0.5
 1
 patches
@@ -300,7 +303,7 @@ minimum-separation
 minimum-separation
 0.0
 10
-5.25
+0.0
 0.25
 1
 patches
@@ -331,8 +334,8 @@ SLIDER
 nb-objects
 nb-objects
 0
-100
-100.0
+1000
+248.0
 1
 1
 NIL
@@ -354,6 +357,21 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+15
+344
+187
+377
+maxspeed
+maxspeed
+0
+5
+0.4
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
