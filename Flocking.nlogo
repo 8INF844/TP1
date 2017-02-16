@@ -36,7 +36,9 @@ to go
     [
       if random pause = 1 [
         set energy (random maxenergy)
-        drop-object
+        force-drop-object
+        set align-vector (list (random-float 2 - 1) (random-float 2 - 1))
+        set move-vector (list (random-float 2 - 1) (random-float 2 - 1))
       ]
     ]
   ]
@@ -161,6 +163,14 @@ to drop-object
      set color white
   ]
 end
+
+to force-drop-object
+  let turtlecolor color
+  if pcolor = black and color != white [
+     set pcolor color
+     set color white
+  ]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 250
@@ -247,7 +257,7 @@ align-factor
 align-factor
 0
 10.0
-2.25
+5.75
 0.25
 1
 degrees
@@ -262,7 +272,7 @@ cohere-factor
 cohere-factor
 0
 2
-0.3
+0.4
 0.1
 1
 degrees
@@ -277,7 +287,7 @@ separate-factor
 separate-factor
 0
 10
-0.75
+2.0
 0.25
 1
 degrees
@@ -307,7 +317,7 @@ minimum-separation
 minimum-separation
 0.0
 10
-6.0
+2.0
 0.25
 1
 patches
@@ -371,7 +381,7 @@ maxspeed
 maxspeed
 0
 5
-0.5
+0.4
 0.1
 1
 NIL
@@ -404,7 +414,7 @@ maxenergy
 maxenergy
 0
 10000
-2400.0
+1100.0
 100
 1
 NIL
@@ -419,7 +429,7 @@ pause
 pause
 0
 100
-2.0
+28.0
 1
 1
 NIL
