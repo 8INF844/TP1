@@ -73,6 +73,18 @@ end
 
 to find-flockmates  ;; turtle procedure
   set flockmates other turtles in-radius vision
+  let base towardsxy (xcor + item 0 move-vector) (ycor + item 1 move-vector)
+  let final flockmates
+  ask flockmates
+  [
+    let alpha towards myself
+    if abs (subtract-headings alpha base) < deadangle
+    [
+      let to-rm self
+      set final final with [self != to-rm]
+    ]
+  ]
+  set flockmates final
 end
 
 ;; Calcul du vecteur de séparation d'une tortue par rapport à ses voisins
@@ -243,7 +255,7 @@ population
 population
 1.0
 2000
-185.0
+126.0
 1.0
 1
 NIL
@@ -431,6 +443,21 @@ pause
 0
 100
 20.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+837
+392
+1009
+425
+deadangle
+deadangle
+0
+180
+30.0
 1
 1
 NIL
