@@ -1,28 +1,24 @@
 turtles-own [
-  id
   flockmates         ;; agentset of nearby turtles
   nearest-neighbor   ;; closest one of our flockmates
-  align-vector       ;;
-  move-vector        ;;
-  energy             ;;
+  align-vector       ;; vector which represent the Velocity Matching behavior
+  move-vector        ;; vector which represent the the behavior
+  energy             ;; number of tick without pause
 ]
 
 to setup
   clear-all
-  let counter 0
-  create-turtles population
-    [
-      set shape "bug"
-      set id counter
-      set counter counter + 1
-      set color white
-      set size 1.5  ;; easier to see
-      setxy random-xcor random-ycor
-      set flockmates no-turtles
-      set align-vector (list (random-float 2 - 1) (random-float 2 - 1))
-      set move-vector (list (random-float 2 - 1) (random-float 2 - 1))
-      set energy 0
-    ]
+  ;; Initialize turtles
+  create-turtles population [
+    set shape "bug"
+    set color white
+    set size 1.5
+    setxy random-xcor random-ycor
+    set flockmates no-turtles
+    set align-vector (list (random-float 2 - 1) (random-float 2 - 1))
+    set move-vector (list (random-float 2 - 1) (random-float 2 - 1))
+    set energy 0
+  ]
   reset-ticks
 end
 
@@ -33,10 +29,10 @@ to go
       get-object
       drop-object
       set energy (energy - 1)
-    ]
-    [
+    ] [
       if random pause = 1 [
         set energy (random maxenergy)
+        ;; If the turtle doesn't have any energy, drop the object and get a new direction
         force-drop-object
         set align-vector (list (random-float 2 - 1) (random-float 2 - 1))
         set move-vector (list (random-float 2 - 1) (random-float 2 - 1))
@@ -46,23 +42,23 @@ to go
   tick
 end
 
-to flock  ;; turtle procedure
-  ;; S1 Chercher les voisins de l'agent considéré
+to flock
   let force list 0 0
   find-flockmates
-  if any? flockmates
-  [
+  ;; Compute the 3 forces
+  if any? flockmates [
     let separate-vector separate flockmates
     set align-vector align flockmates
     let cohere-vector cohere flockmates
     set force (map + (map [[a] -> a * cohere-factor] cohere-vector)
-      (map + (map [[a] -> a * align-factor] align-vector) (map [[a] -> a * separate-factor] separate-vector))
-     )
+              (map + (map [[a] -> a * align-factor] align-vector)
+                     (map [[a] -> a * separate-factor] separate-vector)))
   ]
   set move-vector (map + move-vector force)
+  ;; Move the turtle
   let speed sqrt sum (map * move-vector move-vector)
-  if speed > maxspeed
-  [
+  ;; Limit the speed
+  if speed > maxspeed [
     let c maxspeed / speed
     set speed maxspeed
     set move-vector map [[a] -> a * c] move-vector
@@ -71,15 +67,14 @@ to flock  ;; turtle procedure
   fd speed
 end
 
-to find-flockmates  ;; turtle procedure
+to find-flockmates
+  ;; Get turtles in the vision field of the turtle
   set flockmates other turtles in-radius vision
   let base towardsxy (xcor + item 0 move-vector) (ycor + item 1 move-vector)
   let final flockmates
-  ask flockmates
-  [
+  ask flockmates [
     let alpha towards myself
-    if abs (subtract-headings alpha base) < deadangle
-    [
+    if abs (subtract-headings alpha base) < deadangle [
       let to-rm self
       set final final with [self != to-rm]
     ]
@@ -87,20 +82,14 @@ to find-flockmates  ;; turtle procedure
   set flockmates final
 end
 
-;; Calcul du vecteur de séparation d'une tortue par rapport à ses voisins
 to-report separate [turtlesaround]
+  ;; Collision avoidance
   let res list 0 0
-  ;; 2 Pour chaque voisin
-  ask turtlesaround
-  [
-    if distance myself < minimum-separation
-    [
-      ;; 2.1 Calculer le vecteur directeur entre le voisin et l'agent
+  ask turtlesaround [
+    if distance myself < minimum-separation [
       let dist distance myself
       let alpha (towards myself)
-      ; let vect list (dist * cos alpha) (dist * sin alpha)
 
-      ;; 2.2 Le multiplier par l'inverse de la distance au voisin
       let c minimum-separation / dist
       let vect list ((sin alpha) * c) ((cos alpha) * c)
       set res (map + res vect)
@@ -113,13 +102,12 @@ to-report separate [turtlesaround]
   report res
 end
 
-;; Calcul du vecteur d'alignement d'une tortue par rapport à ses voisins
 to-report align [turtlesaround]
+  ;; Velocity Matching
   let res align-vector
   let turtlecolor color
   set turtlesaround (other turtles in-radius vision with [color = turtlecolor])
-  ask turtlesaround
-  [
+  ask turtlesaround [
     set res (map + res align-vector)
   ]
   let c count turtlesaround + 1
@@ -127,34 +115,22 @@ to-report align [turtlesaround]
 end
 
 to-report cohere [turtlesaround]
+  ;; Flock Centering
   let center (list 0 0)
   let turtlecolor color
   set turtlesaround (other turtles in-radius vision with [color = turtlecolor])
-  ;; Calculer barycentre de l'agent et de ses voisins
   ask turtlesaround [
     set center (map + center (list xcor ycor))
   ]
-  if any? turtlesaround
-  [
+  ifelse any? turtlesaround [
     let c count turtlesaround
     set center (map [[a] -> a / c] center)
-  ]
-  if not any? turtlesaround
-  [
+  ] [
     report move-vector
   ]
-  ;; Calculer le vecteur directeur entre la position de l’agent et ce centre de gravité
+  ;; Compute the vector to the center
   let alpha towardsxy (item 0 center) (item 1 center)
-
-  ;; Multiplier le vecteur directeur par la vitesse maximale
-  let vect list (maxspeed * (sin alpha)) (maxspeed * (cos alpha))
-
-  ;; La force de cohésion est la différence entre la vélocité maximale et la vélocité courante
-  report vect
-end
-
-to reset
-  ask patches [ set pcolor black ]
+  report list (maxspeed * (sin alpha)) (maxspeed * (cos alpha))
 end
 
 to generate-objects
@@ -163,6 +139,7 @@ to generate-objects
 end
 
 to get-object
+  ;; If the turtle is on an object and doesn't have any object
   if pcolor != black and color = white [
     set color pcolor
     set pcolor black
@@ -170,6 +147,7 @@ to get-object
 end
 
 to drop-object
+  ;; The turtle drop the object if it's near another object
   let turtlecolor color
   if pcolor = black and color != white and any? patches with [pcolor = turtlecolor] in-radius 1 [
      set pcolor color
@@ -178,6 +156,7 @@ to drop-object
 end
 
 to force-drop-object
+  ;; The turtle drop the object
   let turtlecolor color
   if pcolor = black and color != white [
      set pcolor color
@@ -186,9 +165,9 @@ to force-drop-object
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-250
+810
 10
-755
+1315
 516
 -1
 -1
@@ -213,11 +192,11 @@ ticks
 30.0
 
 BUTTON
-39
-93
-116
-126
-NIL
+268
+30
+349
+63
+Initialize
 setup
 NIL
 1
@@ -230,11 +209,11 @@ NIL
 1
 
 BUTTON
-122
-93
-203
-126
-NIL
+496
+35
+577
+68
+Start
 go
 T
 1
@@ -247,25 +226,25 @@ NIL
 0
 
 SLIDER
-11
-51
-234
-84
+16
+29
+260
+62
 population
 population
 1.0
 2000
-126.0
+200.0
 1.0
 1
 NIL
 HORIZONTAL
 
 SLIDER
-4
-217
-237
-250
+16
+155
+249
+188
 align-factor
 align-factor
 0
@@ -277,10 +256,10 @@ degrees
 HORIZONTAL
 
 SLIDER
-4
-251
-237
-284
+15
+192
+248
+225
 cohere-factor
 cohere-factor
 0
@@ -292,10 +271,10 @@ degrees
 HORIZONTAL
 
 SLIDER
-4
-285
-252
-318
+15
+231
+249
+264
 separate-factor
 separate-factor
 0
@@ -307,10 +286,10 @@ degrees
 HORIZONTAL
 
 SLIDER
-9
-135
-232
-168
+260
+299
+483
+332
 vision
 vision
 0.0
@@ -322,10 +301,10 @@ patches
 HORIZONTAL
 
 SLIDER
-9
-169
-232
-202
+258
+231
+481
+264
 minimum-separation
 minimum-separation
 0.0
@@ -336,43 +315,26 @@ minimum-separation
 patches
 HORIZONTAL
 
-BUTTON
-65
-16
-174
-49
-onetimego
-go
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
 SLIDER
-773
-25
-945
-58
+16
+92
+188
+125
 nb-objects
 nb-objects
 0
 1000
-191.0
+200.0
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-948
-25
-1104
-58
+193
+92
+349
+125
 NIL
 generate-objects
 NIL
@@ -387,9 +349,9 @@ NIL
 
 SLIDER
 15
-344
-187
-377
+298
+250
+331
 maxspeed
 maxspeed
 0
@@ -401,13 +363,13 @@ NIL
 HORIZONTAL
 
 PLOT
-851
-182
-1051
-332
+496
+82
+800
+369
 plot 1
-NIL
-NIL
+time
+turtles in flock with turtle 0
 0.0
 100.0
 0.0
@@ -419,10 +381,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "ask turtle 0 \n[ \n  plot count turtles in-radius vision\n]"
 
 SLIDER
-27
-395
-199
-428
+15
+336
+250
+369
 maxenergy
 maxenergy
 0
@@ -434,10 +396,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-28
-463
-200
-496
+259
+336
+483
+369
 pause
 pause
 0
@@ -449,10 +411,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-837
-392
-1009
-425
+15
+376
+250
+409
 deadangle
 deadangle
 0
@@ -462,6 +424,56 @@ deadangle
 1
 NIL
 HORIZONTAL
+
+TEXTBOX
+17
+9
+167
+27
+1: Generate population
+12
+0.0
+1
+
+TEXTBOX
+18
+71
+254
+89
+2: Generate Objects (facultative)
+12
+0.0
+1
+
+TEXTBOX
+19
+139
+169
+157
+3: Change factors
+12
+0.0
+1
+
+TEXTBOX
+16
+277
+166
+295
+4: other modifiers
+12
+0.0
+1
+
+TEXTBOX
+495
+17
+645
+35
+5: Start flocking
+12
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
