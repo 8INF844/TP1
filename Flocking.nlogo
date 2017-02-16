@@ -36,6 +36,7 @@ to go
     [
       if random pause = 1 [
         set energy (random maxenergy)
+        drop-object
       ]
     ]
   ]
@@ -231,7 +232,7 @@ population
 population
 1.0
 2000
-395.0
+185.0
 1.0
 1
 NIL
@@ -246,7 +247,7 @@ align-factor
 align-factor
 0
 10.0
-7.25
+2.25
 0.25
 1
 degrees
@@ -261,7 +262,7 @@ cohere-factor
 cohere-factor
 0
 2
-0.5
+0.3
 0.1
 1
 degrees
@@ -276,7 +277,7 @@ separate-factor
 separate-factor
 0
 10
-4.25
+0.75
 0.25
 1
 degrees
@@ -306,7 +307,7 @@ minimum-separation
 minimum-separation
 0.0
 10
-4.0
+6.0
 0.25
 1
 patches
@@ -338,7 +339,7 @@ nb-objects
 nb-objects
 0
 1000
-580.0
+191.0
 1
 1
 NIL
@@ -370,7 +371,7 @@ maxspeed
 maxspeed
 0
 5
-0.4
+0.5
 0.1
 1
 NIL
@@ -403,7 +404,7 @@ maxenergy
 maxenergy
 0
 10000
-800.0
+2400.0
 100
 1
 NIL
@@ -418,7 +419,7 @@ pause
 pause
 0
 100
-55.0
+2.0
 1
 1
 NIL
