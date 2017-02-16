@@ -12,6 +12,7 @@ to setup
   let counter 0
   create-turtles population
     [
+      set shape "bug"
       set id counter
       set counter counter + 1
       set color white
@@ -317,7 +318,7 @@ minimum-separation
 minimum-separation
 0.0
 10
-2.0
+2.5
 0.25
 1
 patches
@@ -429,7 +430,7 @@ pause
 pause
 0
 100
-28.0
+20.0
 1
 1
 NIL
