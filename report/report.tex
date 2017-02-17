@@ -46,7 +46,86 @@ On peut enfin ajouter des fonctionnalités comme l'initialisation de la position
 On peut trouver plusieurs applications concrètes à la simulation d'un flocking, par exemple dans la simulation de traffics routiers ou encore pour l'observation d'animaux.
 Enfin, il est possible d'améliorer l'algorithme en le parrallélisant ou en étant sûr que $N$ soit assez petit (en considérant seulement une partie du flock par exemple).
 
-\section{Simulation avec NetLogo}
+\section{Modification du code source}
 
+Le Flock se base donc sur 3 forces, séparées en 3 fonctions dans le code~:
+\begin{itemize}
+  \item \emph{separate [turtlesaround]}, pour empêcher que les turtles rentrent en contact. Ici, un vecteur force est calculé entre une turtle et les voisins qu'elle détecte. Ce vecteur est alors pondéré par la distance entre les deux turtles. Ainsi, plus les turtles sont proches, plus la force de séparation sera forte.
+  \begin{figure}[h]
+  	\begin{center}
+  		\includegraphics[scale=0.3]{img/separate}
+  		\caption{Force de séparation}
+  		\label{fig:separate}
+  	\end{center}
+  \end{figure}
+  \item \emph{align [turtlesaround]}, qui sert à aligner les turtles dans la même direction. Ici on prend les vecteurs d'alignement de chaque turtle, et on considère le vecteur moyen.
+  \begin{figure}[h]
+  	\begin{center}
+  		\includegraphics[scale=0.3]{img/align}
+  		\caption{Force d'alignement}
+  		\label{fig:align}
+  	\end{center}
+  \end{figure}
+  \item \emph{cohere [turtlesaround]} qui résulte en un vecteur pour diriger la turtle vers le centre de gravité de ses voisins.
+  \begin{figure}[h]
+  	\begin{center}
+  		\includegraphics[scale=0.3]{img/cohere}
+  		\caption{Force de cohésion}
+  		\label{fig:cohere}
+  	\end{center}
+  \end{figure}
+\end{itemize}
+
+\section{Ramassage d'objets}
+%TODO
+
+De plus, nous pouvons générer des objets aléatoires sur le terrain. Les oiseaux peuvent alors prendre ces objets et le lacher lorsqu'un objet du même type se situe à côté de ce point. Un oiseau ne peut pas prendre plusieurs objets.
+
+\section{Pondération des forces}
+
+Nous avons tenté plusieurs scénarios et nous obtenons un résultat qui fonctionne avec la configuration suivante~:
+\begin{itemize}
+  \item population 200
+  \item align-factor 5,75
+  \item cohere-factor 0,4
+  \item separate-factor 2,0 (minimum separation 2,5 et une vision de 8 patches)
+\end{itemize}
+On remarque que la force de cohésion est plus forte que les deux autres forces, on la multiplie donc par un facteur faible.
+
+\section{Mesure de performance}
+
+Afin de mesurer la performance du flock, nous avons décider de mesurer le nombre de voisins détectés par la $turtle 0$. Ainsi, si le flock fonctionne, le nombre de voisin devrait augmenter.
+
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[scale=0.5]{img/performance}
+		\caption{Performance avec les pondérations données précédement}
+		\label{fig:performance}
+	\end{center}
+\end{figure}
+
+\section{Pondération d'un non-flock}
+De plus, si la force de cohésion est nulle, les agents ne se comporteront plus en flock, peu importe les valeurs des deux autres forces et le ramassage d'objets pour en faire des tas est beaucoup plus lent (mais continue de fonctionner car les agents reste en général dans la même direction).
+
+\section{Création de tas}
+%TODO Amélioration du code actuel
+
+\section{Comparaison des 2 flocks}
+%TODO
+
+\section{Ajout de fonctionnalités}
+
+Deux fonctionnalités ont été ajoutées. La première est la consommation d'énergie. Chaque agent possède un niveau d'énergie entre 1 et $maxenergy$. Cette charge baisse de 1 par tick. Une fois que l'agent n'a plus d'énergie, il s'arrête, lâche l'objet s'il en possède un et se met en pause. Il possède ensuite $1/pause$ probabilité de repartir à chaque tick. Au départ, il choisit d'une nouvelle direction.
+
+La seconde fonctionnalité est le champ de vision. L'agent possède un angle mort à l'arrière qui est paramétrable avec une valeur entre 0 et 180. Par exemple, lorsque cette valeur est paramétrée à 30°, l'agent possède donc un angle mort de 60° à l'arrière. Si un autre agent se trouve dans cet angle, il est ignoré.
+
+\section{Interface}
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[scale=0.3]{img/interface}
+		\caption{Interface finale}
+		\label{fig:interface}
+	\end{center}
+\end{figure}
 
 \end{document}
