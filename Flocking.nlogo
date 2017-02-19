@@ -34,8 +34,6 @@ to go
         set energy (random maxenergy)
         ;; If the turtle doesn't have any energy, drop the object and get a new direction
         force-drop-object
-        set align-vector (list (random-float 2 - 1) (random-float 2 - 1))
-        set move-vector (list (random-float 2 - 1) (random-float 2 - 1))
       ]
     ]
   ]
@@ -85,12 +83,16 @@ end
 to-report separate [turtlesaround]
   ;; Collision avoidance
   let res list 0 0
+  let bcolor color
   ask turtlesaround [
     if distance myself < minimum-separation [
       let dist distance myself
       let alpha (towards myself)
 
       let c minimum-separation / dist
+      if color != bcolor [
+        set c c * 10
+      ]
       let vect list ((sin alpha) * c) ((cos alpha) * c)
       set res (map + res vect)
     ]
@@ -148,19 +150,27 @@ end
 
 to drop-object
   ;; The turtle drop the object if it's near another object
-  let turtlecolor color
-  if pcolor = black and color != white and any? patches with [pcolor = turtlecolor] in-radius 1 [
-     set pcolor color
-     set color white
+  if drop [
+    let turtlecolor color
+    if pcolor = black and color != white and any? patches with [pcolor = turtlecolor] in-radius 1 [
+      set pcolor color
+      set color white
+      set align-vector (list (random-float 2 - 1) (random-float 2 - 1))
+      set move-vector (list (random-float 2 - 1) (random-float 2 - 1))
+    ]
   ]
 end
 
 to force-drop-object
   ;; The turtle drop the object
-  let turtlecolor color
-  if pcolor = black and color != white [
-     set pcolor color
-     set color white
+  if drop [
+    let turtlecolor color
+    if pcolor = black and color != white [
+      set pcolor color
+      set color white
+    ]
+    set align-vector (list (random-float 2 - 1) (random-float 2 - 1))
+    set move-vector (list (random-float 2 - 1) (random-float 2 - 1))
   ]
 end
 @#$#@#$#@
@@ -234,7 +244,7 @@ population
 population
 1.0
 2000
-200.0
+123.0
 1.0
 1
 NIL
@@ -249,7 +259,7 @@ align-factor
 align-factor
 0
 10.0
-5.75
+3.5
 0.25
 1
 degrees
@@ -264,7 +274,7 @@ cohere-factor
 cohere-factor
 0
 2
-0.4
+0.7
 0.1
 1
 degrees
@@ -279,7 +289,7 @@ separate-factor
 separate-factor
 0
 10
-2.0
+5.0
 0.25
 1
 degrees
@@ -294,7 +304,7 @@ vision
 vision
 0.0
 50
-8.0
+11.5
 0.5
 1
 patches
@@ -309,7 +319,7 @@ minimum-separation
 minimum-separation
 0.0
 10
-2.5
+2.0
 0.25
 1
 patches
@@ -324,7 +334,7 @@ nb-objects
 nb-objects
 0
 1000
-200.0
+96.0
 1
 1
 NIL
@@ -389,7 +399,7 @@ maxenergy
 maxenergy
 0
 10000
-1100.0
+2900.0
 100
 1
 NIL
@@ -404,7 +414,7 @@ pause
 pause
 0
 100
-20.0
+2.0
 1
 1
 NIL
@@ -474,6 +484,17 @@ TEXTBOX
 12
 0.0
 1
+
+SWITCH
+259
+377
+486
+410
+drop
+drop
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?

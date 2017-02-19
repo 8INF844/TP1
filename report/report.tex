@@ -77,9 +77,9 @@ Le Flock se base donc sur 3 forces, séparées en 3 fonctions dans le code~:
 \end{itemize}
 
 \section{Ramassage d'objets}
-%TODO
 
-De plus, nous pouvons générer des objets aléatoires sur le terrain. Les oiseaux peuvent alors prendre ces objets et le lacher lorsqu'un objet du même type se situe à côté de ce point. Un oiseau ne peut pas prendre plusieurs objets.
+De plus, nous pouvons générer des objets aléatoires sur le terrain. Les oiseaux peuvent alors prendre ces objets et le lacher lorsqu'un objet du même type se situe à côté de ce point. Un oiseau ne peut pas prendre plusieurs objets. L'idée est donc de former des tas avec les objets générés.
+2 scénarios ont été réalisés (cf plus loin). Soit l'agent récupère un objet et le garde jusqu'à la fin, soit il peut le lacher afin de former des tas.
 
 \section{Pondération des forces}
 
@@ -108,10 +108,27 @@ Afin de mesurer la performance du flock, nous avons décider de mesurer le nombr
 De plus, si la force de cohésion est nulle, les agents ne se comporteront plus en flock, peu importe les valeurs des deux autres forces et le ramassage d'objets pour en faire des tas est beaucoup plus lent (mais continue de fonctionner car les agents reste en général dans la même direction).
 
 \section{Création de tas}
-%TODO Amélioration du code actuel
+
+Pour cette question, nous avons désactivé les drop d'objets. Ainsi, lorsqu'un oiseau prend un objet il le garde jusqu'à la fin.
+Les forces ont été modifiés de sorte à~:
+\begin{itemize}
+  \item La force de séparation est plus forte (d'un facteur 10) si l'agent n'est pas de la même couleur
+  \item La force d'alignement ne s'aligne qu'avec les agents possédant les mêmes objets
+  \item Le force de cohésion ne se fait qu'avec les agents possédant le même objet
+\end{itemize}
+On commence à voir des groupes se former avec les paramètres ci-dessus au bout de 2000 ticks.
+\section{Interface}
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[scale=0.3]{img/groups}
+		\caption{Des groupes de flocks}
+		\label{fig:groups}
+	\end{center}
+\end{figure}
 
 \section{Comparaison des 2 flocks}
-%TODO
+Au final, outre le fait que l'exemple de flocking de NetLogo soit plus basique (pas de gestion de récupération d'objet, d'énergie, de formations de tas, etc. La séparation du modèle précédent ne se base que sur le voisin le plus proche, ce qui fait qu'un agent rebondi dans le cas où l'agent possède un voisin de chaque côté alors qu'avec notre modèle, l'agent restera environ entre les deux agents. Le mouvement sera donc plus naturel.
+De plus, le fait de limiter le mouvement avec une limite de degrés (pour les forces de cohésion et d'alignement n'est pas forcément pertinent d'un point de vue naturel, un oiseau pouvant généralement changer de direction relativement rapidement). Cependant, il possède pour avantage d'être simple et peu gourmand en calculs pour NetLogo.
 
 \section{Ajout de fonctionnalités}
 
