@@ -47,10 +47,14 @@ to flock
   if any? flockmates [
     let separate-vector separate flockmates
     set align-vector align flockmates
+    let color-align-vector color-align flockmates
     let cohere-vector cohere flockmates
+    let color-cohere-vector color-cohere flockmates
     set force (map + (map [[a] -> a * cohere-factor] cohere-vector)
+              (map + (map [[a] -> a * color-cohere-factor] color-cohere-vector)
               (map + (map [[a] -> a * align-factor] align-vector)
-                     (map [[a] -> a * separate-factor] separate-vector)))
+              (map + (map [[a] -> a * color-align-factor] color-align-vector)
+                     (map [[a] -> a * separate-factor] separate-vector)))))
   ]
   set move-vector (map + move-vector force)
   ;; Move the turtle
@@ -107,6 +111,16 @@ end
 to-report align [turtlesaround]
   ;; Velocity Matching
   let res align-vector
+  ask turtlesaround [
+    set res (map + res align-vector)
+  ]
+  let c count turtlesaround + 1
+  report map [[a] -> a / c] res
+end
+
+to-report color-align [turtlesaround]
+  ;; Velocity Matching
+  let res align-vector
   let turtlecolor color
   set turtlesaround (other turtles in-radius vision with [color = turtlecolor])
   ask turtlesaround [
@@ -117,6 +131,23 @@ to-report align [turtlesaround]
 end
 
 to-report cohere [turtlesaround]
+  ;; Flock Centering
+  let center (list 0 0)
+  ask turtlesaround [
+    set center (map + center (list xcor ycor))
+  ]
+  ifelse any? turtlesaround [
+    let c count turtlesaround
+    set center (map [[a] -> a / c] center)
+  ] [
+    report move-vector
+  ]
+  ;; Compute the vector to the center
+  let alpha towardsxy (item 0 center) (item 1 center)
+  report list (maxspeed * (sin alpha)) (maxspeed * (cos alpha))
+end
+
+to-report color-cohere [turtlesaround]
   ;; Flock Centering
   let center (list 0 0)
   let turtlecolor color
@@ -244,7 +275,7 @@ population
 population
 1.0
 2000
-123.0
+150.0
 1.0
 1
 NIL
@@ -259,7 +290,7 @@ align-factor
 align-factor
 0
 10.0
-3.5
+0.0
 0.25
 1
 degrees
@@ -274,7 +305,7 @@ cohere-factor
 cohere-factor
 0
 2
-0.7
+0.0
 0.1
 1
 degrees
@@ -288,8 +319,8 @@ SLIDER
 separate-factor
 separate-factor
 0
-10
-5.0
+20
+4.0
 0.25
 1
 degrees
@@ -297,9 +328,9 @@ HORIZONTAL
 
 SLIDER
 260
-299
+379
 483
-332
+412
 vision
 vision
 0.0
@@ -334,7 +365,7 @@ nb-objects
 nb-objects
 0
 1000
-96.0
+100.0
 1
 1
 NIL
@@ -359,9 +390,9 @@ NIL
 
 SLIDER
 15
-298
+378
 250
-331
+411
 maxspeed
 maxspeed
 0
@@ -392,9 +423,9 @@ PENS
 
 SLIDER
 15
-336
+416
 250
-369
+449
 maxenergy
 maxenergy
 0
@@ -407,9 +438,9 @@ HORIZONTAL
 
 SLIDER
 259
-336
+416
 483
-369
+449
 pause
 pause
 0
@@ -422,9 +453,9 @@ HORIZONTAL
 
 SLIDER
 15
-376
+456
 250
-409
+489
 deadangle
 deadangle
 0
@@ -467,9 +498,9 @@ TEXTBOX
 
 TEXTBOX
 16
-277
+357
 166
-295
+375
 4: other modifiers
 12
 0.0
@@ -487,14 +518,44 @@ TEXTBOX
 
 SWITCH
 259
-377
+457
 486
-410
+490
 drop
 drop
 1
 1
 -1000
+
+SLIDER
+15
+273
+250
+306
+color-cohere-factor
+color-cohere-factor
+0
+2
+0.4
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+16
+313
+250
+346
+color-align-factor
+color-align-factor
+0
+10
+5.5
+0.5
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
